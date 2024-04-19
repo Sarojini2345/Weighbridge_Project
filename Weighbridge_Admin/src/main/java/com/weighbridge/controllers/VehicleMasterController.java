@@ -40,6 +40,7 @@ public class VehicleMasterController {
 //        return ResponseEntity.ok(str);
 //    }
 
+
     @GetMapping("/getAllVehicles")
     public ResponseEntity<List<VehicleResponse>> getAllVehicles(  @RequestParam(defaultValue = "0", required = false) int page,
                                                                   @RequestParam(defaultValue = "10", required = false) int size,
