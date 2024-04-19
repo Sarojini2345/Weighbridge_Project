@@ -26,12 +26,13 @@ public class CompanyMasterServiceImpl implements CompanyMasterService {
     public final CompanyMasterRepository companyMasterRepository;
     public final ModelMapper modelMapper;
     @Autowired
-    HttpServletRequest request;
+    private HttpServletRequest request;
+
     @Override
     public CompanyMasterDto createCompany(CompanyMasterDto companyMasterDto) {
         CompanyMaster byCompanyName = companyMasterRepository.findByCompanyName(companyMasterDto.getCompanyName());
-        if(byCompanyName!=null){
-            throw new ResponseStatusException(HttpStatus.CONFLICT,"Company name already exist");
+        if (byCompanyName != null) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Company name already exist");
         }
         companyMasterDto.setCompanyId(generateCompanyId(companyMasterDto.getCompanyName()));
         HttpSession session = request.getSession();
@@ -66,7 +67,7 @@ public class CompanyMasterServiceImpl implements CompanyMasterService {
             companyId = String.format("%s%02d", companyAbbreviation, siteCount + 1);
         } else {
             // Otherwise, use the abbreviation without a suffix
-            companyId = companyAbbreviation+ "01";;
+            companyId = companyAbbreviation + "01";
         }
 
         return companyId;
@@ -81,11 +82,10 @@ public class CompanyMasterServiceImpl implements CompanyMasterService {
     @Override
     public List<String> getAllCompanyNameOnly() {
 
-        try{
+        try {
             List<String> allCompanyListName = companyMasterRepository.findAllCompanyListName();
             return allCompanyListName;
-        }
-        catch (Exception e){
+        } catch (Exception e) {
             throw new ResourceNotFoundException("Failed to retrieve roles");
         }
 

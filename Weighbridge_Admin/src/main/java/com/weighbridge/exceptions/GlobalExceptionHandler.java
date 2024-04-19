@@ -16,11 +16,11 @@ import java.util.List;
 import java.util.Map;
 
 @RestControllerAdvice
-public class GlobalExceptionHandler  {
+public class GlobalExceptionHandler {
 
     @ExceptionHandler(ResourceNotFoundException.class)
     @ResponseStatus(HttpStatus.NOT_FOUND)
-    public ResponseEntity<ApiResponse> handleResourceNotFoundException(ResourceNotFoundException exception){
+    public ResponseEntity<ApiResponse> handleResourceNotFoundException(ResourceNotFoundException exception) {
         // get the error message
         String message = exception.getMessage();
 
@@ -65,10 +65,9 @@ public class GlobalExceptionHandler  {
     }
 
 
-
     @ExceptionHandler(ResourceCreationException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
-    public ResponseEntity<ApiResponse> handleResourceCreationException(ResourceCreationException exception){
+    public ResponseEntity<ApiResponse> handleResourceCreationException(ResourceCreationException exception) {
         String message = exception.getMessage();
 
         ApiResponse response = ApiResponse.builder()
@@ -78,10 +77,11 @@ public class GlobalExceptionHandler  {
 
         return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
     }
+
     @ExceptionHandler(ResponseStatusException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
-    public ResponseEntity<ApiResponse> handleResponseStatusException(ResponseStatusException exception){
-        String message = exception.getMessage();
+    public ResponseEntity<ApiResponse> handleResponseStatusException(ResponseStatusException exception) {
+        String message = exception.getReason();
 
         ApiResponse response = ApiResponse.builder()
                 .message(message)
