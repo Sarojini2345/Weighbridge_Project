@@ -93,6 +93,7 @@ public class UserAuthenticationServiceImpl implements UserAuthenticationService 
         }
         userName += " " + userMaster.getUserLastName();
         loginResponse.setUserName(userName);
+        loginResponse.setUserId(userMaster.getUserId());
 
         return loginResponse;
     }
