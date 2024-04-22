@@ -65,27 +65,27 @@ public class UserMasterServiceImpl implements UserMasterService {
         // Fetch company and site details if provided
 
 
-           CompanyMaster companyMaster = companyMasterRepository.findByCompanyName(userRequest.getCompany());
-            if (companyMaster == null) {
-                throw new ResourceNotFoundException("CompanyMaster", "companyName", userRequest.getCompany());
-            }
+        CompanyMaster companyMaster = companyMasterRepository.findByCompanyName(userRequest.getCompany());
+        if (companyMaster == null) {
+            throw new ResourceNotFoundException("CompanyMaster", "companyName", userRequest.getCompany());
+        }
 
 
-            String[] siteInfoParts = userRequest.getSite().split(",", 2);
-            if (siteInfoParts.length != 2) {
-                throw new IllegalArgumentException("Invalid format for site info: " + userRequest.getSite());
-            }
-            String siteName = siteInfoParts[0].trim();
-            String siteAddress = siteInfoParts[1].trim();
-            SiteMaster siteMaster = siteMasterRepository.findBySiteNameAndSiteAddress(siteName, siteAddress);
-            if (siteMaster == null) {
-                throw new ResourceNotFoundException("SiteMaster", "siteName", siteName);
-            }
+        String[] siteInfoParts = userRequest.getSite().split(",", 2);
+        if (siteInfoParts.length != 2) {
+            throw new IllegalArgumentException("Invalid format for site info: " + userRequest.getSite());
+        }
+        String siteName = siteInfoParts[0].trim();
+        String siteAddress = siteInfoParts[1].trim();
+        SiteMaster siteMaster = siteMasterRepository.findBySiteNameAndSiteAddress(siteName, siteAddress);
+        if (siteMaster == null) {
+            throw new ResourceNotFoundException("SiteMaster", "siteName", siteName);
+        }
 
 
         // Create UserMaster instance and set properties
         UserMaster userMaster = new UserMaster();
-        String userId = generateUserId(companyMaster.getCompanyId(),siteMaster.getSiteId());
+        String userId = generateUserId(companyMaster.getCompanyId(), siteMaster.getSiteId());
         userMaster.setUserId(userId);
         userMaster.setCompany(companyMaster);
         userMaster.setSite(siteMaster);
@@ -101,6 +101,8 @@ public class UserMasterServiceImpl implements UserMasterService {
         userMaster.setUserCreatedDate(currentDateTime);
         userMaster.setUserModifiedBy(createdBy);
         userMaster.setUserModifiedDate(currentDateTime);
+
+
 
         // Create UserAuthentication instance and set properties
         UserAuthentication userAuthentication = new UserAuthentication();
@@ -121,12 +123,36 @@ public class UserMasterServiceImpl implements UserMasterService {
         userAuthentication.setRoles(roles);
         userAuthentication.setUserPassword(defaultPassword);
 
+        // Add update to user history
+        UserHistory userHistory = new UserHistory();
+        userHistory.setUserId(userId);
+
+        UserHistoryUpdate historyUpdate = new UserHistoryUpdate();
+        // Convert Set<String> to comma-separated String
+        String rolesString = String.join(",", getRoleNames(roles));
+
+        // Set the roles String to the UserHistoryUpdate
+        historyUpdate.setRoles(rolesString);
+        System.out.println(roles);
+        historyUpdate.setModifiedDate(currentDateTime);
+        historyUpdate.setModifiedBy(createdBy);
+        historyUpdate.setSite(siteName + ", " + siteAddress);
+        historyUpdate.setCreatedDate(currentDateTime);
+        historyUpdate.setCreatedBy(createdBy);
+        if (userHistory.getUpdates() == null) {
+            userHistory.setUpdates(new ArrayList<>());
+        }
+        userHistory.getUpdates().add(historyUpdate);
+
         // Save user and user authentication
         try {
             userMasterRepository.save(userMaster);
             UserAuthentication savedUser = userAuthenticationRepository.save(userAuthentication);
+            UserMaster updatedUser = userMasterRepository.save(userMaster);
+            UserAuthentication updatedAuthUser = userAuthenticationRepository.save(userAuthentication);
+            //history saved
+            userHistoryRepository.save(userHistory);
             emailService.sendCredentials(userRequest.getEmailId(), userId, savedUser.getUserPassword());
-
             return "User is created successfully with userId : " + userId;
         } catch (DataAccessException e) {
             // Catch any database access exceptions and throw an InternalServerError exception
@@ -138,20 +164,20 @@ public class UserMasterServiceImpl implements UserMasterService {
     public synchronized String generateUserId(String companyId, String siteId) {
         // Retrieve the current value of the unique identifier from the database for the given company and site
 
-            SequenceGenerator sequenceGenerator = sequenceGeneratorRepository.findByCompanyIdAndSiteId(companyId, siteId).orElse(new SequenceGenerator(companyId, siteId, 1)); // Initialize to 1 if not found
-            int uniqueIdentifier = sequenceGenerator.getNextValue();
+        SequenceGenerator sequenceGenerator = sequenceGeneratorRepository.findByCompanyIdAndSiteId(companyId, siteId).orElse(new SequenceGenerator(companyId, siteId, 1)); // Initialize to 1 if not found
+        int uniqueIdentifier = sequenceGenerator.getNextValue();
 
-            // Concatenate company ID, site ID, and unique identifier
-            String userId = companyId + "_" + siteId + "_" + String.format("%02d", uniqueIdentifier);
+        // Concatenate company ID, site ID, and unique identifier
+        String userId = companyId + "_" + siteId + "_" + String.format("%02d", uniqueIdentifier);
 
-            // Increment the unique identifier
-            uniqueIdentifier = (uniqueIdentifier + 1) % 1000; // Ensure it's always 3 digits
+        // Increment the unique identifier
+        uniqueIdentifier = (uniqueIdentifier + 1) % 1000; // Ensure it's always 3 digits
 
-            // Update the unique identifier value in the database
-            sequenceGenerator.setNextValue(uniqueIdentifier);
-            sequenceGeneratorRepository.save(sequenceGenerator);
+        // Update the unique identifier value in the database
+        sequenceGenerator.setNextValue(uniqueIdentifier);
+        sequenceGeneratorRepository.save(sequenceGenerator);
 
-            return userId;
+        return userId;
 
     }
 
