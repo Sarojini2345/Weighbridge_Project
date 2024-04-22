@@ -253,101 +253,112 @@ public class UserMasterServiceImpl implements UserMasterService {
 
     @Override
     public UserResponse updateUserById(UpdateRequest updateRequest, String userId, HttpSession session) {
-        // Fetch the existing user from the database
-        UserMaster userMaster = userMasterRepository.findById(userId)
-                .orElseThrow(() -> new ResourceNotFoundException("User", "userId", userId));
-
-        // Check if the new email or contact number already exists for other users
-        boolean userExists = userMasterRepository.existsByUserEmailIdAndUserIdNotOrUserContactNoAndUserIdNot(
-                updateRequest.getEmailId(), userId, updateRequest.getContactNo(), userId
-        );
-        if (userExists) {
-            throw new ResponseStatusException(HttpStatus.CONFLICT, "EmailId and ContactNo is exists with another user");
-        }
-
-        // Fetch company and site details
-        String[] siteInfoParts = updateRequest.getSite().split(",", 2);
-        if (siteInfoParts.length != 2) {
-            throw new IllegalArgumentException("Invalid format for site info: " + updateRequest.getSite());
-        }
-
-        String siteName = siteInfoParts[0].trim();
-        String siteAddress = siteInfoParts[1].trim();
-        SiteMaster siteMaster = siteMasterRepository.findBySiteNameAndSiteAddress(siteName, siteAddress);
-        CompanyMaster companyMaster = companyMasterRepository.findByCompanyName(updateRequest.getCompany());
-
-        // Fetch the user authentication details
-        UserAuthentication userAuthentication = userAuthenticationRepository.findByUserId(userId);
-
-        // Set user modification details
-        String modifiedUser = String.valueOf(session.getAttribute("userId"));
-        LocalDateTime currentDateTime = LocalDateTime.now();
-
-
-        //add User History
-        // Add update to user history
-        UserHistory userHistory = new UserHistory();
-        userHistory.setUserId(userId);
-        // Convert Set<String> to comma-separated String
-        String roles = String.join(",", getRoleNames(userAuthentication.getRoles()));
-        // Set the roles String to the UseruserHistory
-        userHistory.setRoles(roles);
-        System.out.println(roles);
-
-        userHistory.setSite(siteName + ", " + siteAddress);
-        userHistory.setCompany(userMaster.getCompany().getCompanyName());
-        userHistory.setUserCreatedBy(userMaster.getUserCreatedBy());
-        userHistory.setUserCreatedDate(userMaster.getUserCreatedDate());
-        userHistory.setUserModifiedBy(modifiedUser);
-        userHistory.setUserModifiedDate(currentDateTime);
-        //save the history
-        userHistoryRepository.save(userHistory);
-
-
-        // Set userMaster object properties from the request
-        userMaster.setCompany(companyMaster);
-        userMaster.setSite(siteMaster);
-        userMaster.setUserEmailId(updateRequest.getEmailId());
-        userMaster.setUserContactNo(updateRequest.getContactNo());
-        userMaster.setUserFirstName(updateRequest.getFirstName());
-        userMaster.setUserMiddleName(updateRequest.getMiddleName());
-        userMaster.setUserLastName(updateRequest.getLastName());
-        userMaster.setUserModifiedBy(modifiedUser);
-        userMaster.setUserModifiedDate(currentDateTime);
-
-
-        // Update user roles
-        Set<RoleMaster> updatedRoles = updateRoles(userAuthentication, updateRequest.getRole());
-
-        // Set the updated roles to the userAuthentication object
-        userAuthentication.setRoles(updatedRoles);
-
         try {
-            // Save updated user and user authentication
-            UserMaster updatedUser = userMasterRepository.save(userMaster);
-            UserAuthentication updatedAuthUser = userAuthenticationRepository.save(userAuthentication);
+            // Fetch the existing user from the database
+            UserMaster userMaster = userMasterRepository.findById(userId)
+                    .orElseThrow(() -> new ResourceNotFoundException("User", "userId", userId));
 
-            // Prepare the response object
-            UserResponse userResponse = new UserResponse();
-            userResponse.setUserId(updatedUser.getUserId());
-            userResponse.setFirstName(updatedUser.getUserFirstName());
-            userResponse.setMiddleName(updatedUser.getUserMiddleName());
-            userResponse.setLastName(updatedUser.getUserLastName());
-            userResponse.setEmailId(updatedUser.getUserEmailId());
-            userResponse.setContactNo(updatedUser.getUserContactNo());
-            userResponse.setCompany(updatedUser.getCompany().getCompanyName());
-            userResponse.setSite(updatedUser.getSite().getSiteName());
-            userResponse.setRole(getRoleNames(updatedAuthUser.getRoles()));
-//            userResponse.setStatus(updatedUser.getUserStatus());
+            // Check if the new email or contact number already exists for other users
+            boolean userExists = userMasterRepository.existsByUserEmailIdAndUserIdNotOrUserContactNoAndUserIdNot(
+                    updateRequest.getEmailId(), userId, updateRequest.getContactNo(), userId
+            );
+            if (userExists) {
+                throw new ResponseStatusException(HttpStatus.CONFLICT, "EmailId and ContactNo is exists with another user");
+            }
 
-            return userResponse;
+            // Fetch company and site details
+            String[] siteInfoParts = updateRequest.getSite().split(",", 2);
+            if (siteInfoParts.length != 2) {
+                throw new IllegalArgumentException("Invalid format for site info: " + updateRequest.getSite());
+            }
+
+            String siteName = siteInfoParts[0].trim();
+            String siteAddress = siteInfoParts[1].trim();
+            SiteMaster siteMaster = siteMasterRepository.findBySiteNameAndSiteAddress(siteName, siteAddress);
+            CompanyMaster companyMaster = companyMasterRepository.findByCompanyName(updateRequest.getCompany());
+
+            // Fetch the user authentication details
+            UserAuthentication userAuthentication = userAuthenticationRepository.findByUserId(userId);
+
+            // Set user modification details
+            String modifiedUser = null;
+            LocalDateTime currentDateTime = LocalDateTime.now();
+
+            if (session != null && session.getAttribute("userId") != null) {
+                modifiedUser = String.valueOf(session.getAttribute("userId"));
+
+                // Add update to user history
+                UserHistory userHistory = new UserHistory();
+                userHistory.setUserId(userId);
+                // Convert Set<String> to comma-separated String
+                String roles = String.join(",", getRoleNames(userAuthentication.getRoles()));
+                // Set the roles String to the UseruserHistory
+                userHistory.setRoles(roles);
+                System.out.println(roles);
+
+                userHistory.setSite(siteName + ", " + siteAddress);
+                userHistory.setCompany(userMaster.getCompany().getCompanyName());
+                userHistory.setUserCreatedBy(userMaster.getUserCreatedBy());
+                userHistory.setUserCreatedDate(userMaster.getUserCreatedDate());
+                userHistory.setUserModifiedBy(modifiedUser);
+                userHistory.setUserModifiedDate(userMaster.getUserModifiedDate());
+
+                // Set userMaster object properties from the request
+                userMaster.setCompany(companyMaster);
+                userMaster.setSite(siteMaster);
+                userMaster.setUserEmailId(updateRequest.getEmailId());
+                userMaster.setUserContactNo(updateRequest.getContactNo());
+                userMaster.setUserFirstName(updateRequest.getFirstName());
+                userMaster.setUserMiddleName(updateRequest.getMiddleName());
+                userMaster.setUserLastName(updateRequest.getLastName());
+                userMaster.setUserModifiedBy(modifiedUser);
+                userMaster.setUserModifiedDate(currentDateTime);
+
+                Set<RoleMaster> updatedRoles = updateRoles(userAuthentication, updateRequest.getRole());
+
+                // Set the updated roles to the userAuthentication object
+                userAuthentication.setRoles(updatedRoles);
+
+                // Save updated user and user authentication
+                UserMaster updatedUser = userMasterRepository.save(userMaster);
+                UserAuthentication updatedAuthUser = userAuthenticationRepository.save(userAuthentication);
+                // Save the history
+                userHistoryRepository.save(userHistory);
+
+
+                // Prepare the response object
+                UserResponse userResponse = new UserResponse();
+                userResponse.setUserId(updatedUser.getUserId());
+                userResponse.setFirstName(updatedUser.getUserFirstName());
+                userResponse.setMiddleName(updatedUser.getUserMiddleName());
+                userResponse.setLastName(updatedUser.getUserLastName());
+                userResponse.setEmailId(updatedUser.getUserEmailId());
+                userResponse.setContactNo(updatedUser.getUserContactNo());
+                userResponse.setCompany(updatedUser.getCompany().getCompanyName());
+                userResponse.setSite(updatedUser.getSite().getSiteName());
+                userResponse.setRole(getRoleNames(updatedAuthUser.getRoles()));
+                //            userResponse.setStatus(updatedUser.getUserStatus());
+
+                return userResponse;
+            } else {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Session Expired, Login again !");
+            }
+
+
+        } catch (ResourceNotFoundException e) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, e.getMessage(), e);
+        } catch (IllegalArgumentException e) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, e.getMessage(), e);
+        } catch (ResponseStatusException e) {
+            throw e; // Re-throwing already handled exceptions
         } catch (DataAccessException e) {
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Database access error occurred", e);
         } catch (Exception e) {
-            // Catch any exceptions during save operations and throw a ResourceCreationException
-            throw new ResourceCreationException("Failed to Update User", e);
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Failed to Update User", e);
         }
+
     }
+
 
     private Set<RoleMaster> updateRoles(UserAuthentication userAuthentication, Set<String> updatedRoleNames) {
         Set<RoleMaster> updatedRoles = new HashSet<>();
