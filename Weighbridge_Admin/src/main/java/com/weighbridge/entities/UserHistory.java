@@ -3,6 +3,7 @@ package com.weighbridge.entities;
 import jakarta.persistence.*;
 import lombok.Data;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Entity
@@ -15,8 +16,22 @@ public class UserHistory {
 
     private String userId;
 
-    @OneToMany(cascade = CascadeType.ALL)
-    @JoinColumn(name = "user_history_id")
-    private List<UserHistoryUpdate> updates;
+    private String roles;
+
+    private String Company;
+    private String site;
+    @Column(name = "user_created_by")
+    private String userCreatedBy;
+
+    @Column(name = "user_created_date")
+    private LocalDateTime userCreatedDate;
+
+    @Column(name = "user_modified_by")
+    private String userModifiedBy;
+
+    @Column(name = "user_modified_date")
+    private LocalDateTime userModifiedDate;
+
+
 
 }

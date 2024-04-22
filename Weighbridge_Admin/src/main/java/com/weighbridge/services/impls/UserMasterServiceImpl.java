@@ -102,7 +102,6 @@ public class UserMasterServiceImpl implements UserMasterService {
         userMaster.setUserModifiedDate(currentDateTime);
 
 
-
         // Create UserAuthentication instance and set properties
         UserAuthentication userAuthentication = new UserAuthentication();
         userAuthentication.setUserId(userId);
@@ -122,26 +121,10 @@ public class UserMasterServiceImpl implements UserMasterService {
         userAuthentication.setRoles(roles);
         userAuthentication.setUserPassword(defaultPassword);
 
-        // Add update to user history
-        UserHistory userHistory = new UserHistory();
-        userHistory.setUserId(userId);
 
-        UserHistoryUpdate historyUpdate = new UserHistoryUpdate();
         // Convert Set<String> to comma-separated String
         String rolesString = String.join(",", getRoleNames(roles));
 
-        // Set the roles String to the UserHistoryUpdate
-        historyUpdate.setRoles(rolesString);
-        System.out.println(roles);
-        historyUpdate.setModifiedDate(currentDateTime);
-        historyUpdate.setModifiedBy(createdBy);
-        historyUpdate.setSite(siteName + ", " + siteAddress);
-        historyUpdate.setCreatedDate(currentDateTime);
-        historyUpdate.setCreatedBy(createdBy);
-        if (userHistory.getUpdates() == null) {
-            userHistory.setUpdates(new ArrayList<>());
-        }
-        userHistory.getUpdates().add(historyUpdate);
 
         // Save user and user authentication
         try {
@@ -149,8 +132,7 @@ public class UserMasterServiceImpl implements UserMasterService {
             UserAuthentication savedUser = userAuthenticationRepository.save(userAuthentication);
             UserMaster updatedUser = userMasterRepository.save(userMaster);
             UserAuthentication updatedAuthUser = userAuthenticationRepository.save(userAuthentication);
-            //history saved
-            userHistoryRepository.save(userHistory);
+
             emailService.sendCredentials(userRequest.getEmailId(), userId, savedUser.getUserPassword());
             return "User is created successfully with userId : " + userId;
         } catch (DataAccessException e) {
@@ -293,6 +275,34 @@ public class UserMasterServiceImpl implements UserMasterService {
         SiteMaster siteMaster = siteMasterRepository.findBySiteNameAndSiteAddress(siteName, siteAddress);
         CompanyMaster companyMaster = companyMasterRepository.findByCompanyName(updateRequest.getCompany());
 
+        // Fetch the user authentication details
+        UserAuthentication userAuthentication = userAuthenticationRepository.findByUserId(userId);
+
+        // Set user modification details
+        String modifiedUser = String.valueOf(session.getAttribute("userId"));
+        LocalDateTime currentDateTime = LocalDateTime.now();
+
+
+        //add User History
+        // Add update to user history
+        UserHistory userHistory = new UserHistory();
+        userHistory.setUserId(userId);
+        // Convert Set<String> to comma-separated String
+        String roles = String.join(",", getRoleNames(userAuthentication.getRoles()));
+        // Set the roles String to the UseruserHistory
+        userHistory.setRoles(roles);
+        System.out.println(roles);
+
+        userHistory.setSite(siteName + ", " + siteAddress);
+        userHistory.setCompany(userMaster.getCompany().getCompanyName());
+        userHistory.setUserCreatedBy(userMaster.getUserCreatedBy());
+        userHistory.setUserCreatedDate(userMaster.getUserCreatedDate());
+        userHistory.setUserModifiedBy(modifiedUser);
+        userHistory.setUserModifiedDate(currentDateTime);
+        //save the history
+        userHistoryRepository.save(userHistory);
+
+
         // Set userMaster object properties from the request
         userMaster.setCompany(companyMaster);
         userMaster.setSite(siteMaster);
@@ -301,15 +311,9 @@ public class UserMasterServiceImpl implements UserMasterService {
         userMaster.setUserFirstName(updateRequest.getFirstName());
         userMaster.setUserMiddleName(updateRequest.getMiddleName());
         userMaster.setUserLastName(updateRequest.getLastName());
-
-        // Set user modification details
-        String modifiedUser = String.valueOf(session.getAttribute("userId"));
-        LocalDateTime currentDateTime = LocalDateTime.now();
         userMaster.setUserModifiedBy(modifiedUser);
         userMaster.setUserModifiedDate(currentDateTime);
 
-        // Fetch the user authentication details
-        UserAuthentication userAuthentication = userAuthenticationRepository.findByUserId(userId);
 
         // Update user roles
         Set<RoleMaster> updatedRoles = updateRoles(userAuthentication, updateRequest.getRole());
@@ -321,34 +325,6 @@ public class UserMasterServiceImpl implements UserMasterService {
             // Save updated user and user authentication
             UserMaster updatedUser = userMasterRepository.save(userMaster);
             UserAuthentication updatedAuthUser = userAuthenticationRepository.save(userAuthentication);
-
-            // Add update to user history
-            UserHistory userHistory = userHistoryRepository.findByUserId(userId);
-            if (userHistory == null) {
-                userHistory = new UserHistory();
-                userHistory.setUserId(userId);
-            }
-            UserHistoryUpdate historyUpdate = new UserHistoryUpdate();
-
-            // Convert Set<String> to comma-separated String
-            String roles = String.join(",", getRoleNames(updatedAuthUser.getRoles()));
-
-
-            // Set the roles String to the UserHistoryUpdate
-            historyUpdate.setRoles(roles);
-            System.out.println(roles);
-
-            historyUpdate.setModifiedDate(currentDateTime);
-            historyUpdate.setModifiedBy(modifiedUser);
-            historyUpdate.setSite(siteName + ", " + siteAddress);
-            historyUpdate.setCreatedDate(updatedUser.getUserCreatedDate());
-            historyUpdate.setCreatedBy(updatedUser.getUserCreatedBy());
-            if (userHistory.getUpdates() == null) {
-                userHistory.setUpdates(new ArrayList<>());
-            }
-            userHistory.getUpdates().add(historyUpdate);
-            userHistoryRepository.save(userHistory);
-
 
             // Prepare the response object
             UserResponse userResponse = new UserResponse();
