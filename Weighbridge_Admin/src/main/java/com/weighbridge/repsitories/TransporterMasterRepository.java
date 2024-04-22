@@ -13,6 +13,7 @@ public interface TransporterMasterRepository extends JpaRepository<TransporterMa
     TransporterMaster findByTransporterName(String transporterName);
 
 
-//    @Query("select u.transporterName from TransporterMaster u")
-//    String findAllTransporter();
+
+    List<TransporterMaster> findTransporterMastersByVehiclesId(Long vehicleId);
+
 }

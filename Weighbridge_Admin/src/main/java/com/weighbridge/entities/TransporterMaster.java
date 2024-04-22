@@ -1,38 +1,45 @@
 package com.weighbridge.entities;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import jakarta.persistence.*;
+import lombok.*;
 
 import java.time.LocalDateTime;
+import java.util.HashSet;
+import java.util.Set;
 
+@Setter
+@Getter
 @Entity
-@Data
 @NoArgsConstructor
 @AllArgsConstructor
 public class TransporterMaster {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long transporterId;
-
-    private String status="Active";
-
+    private long id;
     private String transporterName;
-
     private String transporterContactNo;
-
     private String transporterEmailId;
-
     private String transporterAddress;
+    private String status = "ACTIVE";
+    private String transporterCreatedBy;
+    private LocalDateTime transporterCreatedDate;
+    private String transporterModifiedBy;
+    private LocalDateTime transporterModifiedDate;
 
-    private String createdBy;
-    private String modifiedBy;
-    private LocalDateTime createdDate;
-    private LocalDateTime modifiedDate;
+    @JsonIgnore
+    @ManyToMany(fetch = FetchType.LAZY, cascade = {CascadeType.PERSIST, CascadeType.MERGE})
+    @JoinTable(
+            name = "transporter_vehicle",
+            joinColumns = {@JoinColumn(name = "transporter_id", referencedColumnName = "id")},
+            inverseJoinColumns = {@JoinColumn(name = "vehicle_Id", referencedColumnName = "id")})
+    private Set<VehicleMaster> vehicles = new HashSet<>();
+
+    // Add existing vehicle to existing transporter
+    public void addVehicle(VehicleMaster vehicleMaster) {
+        this.vehicles.add(vehicleMaster);
+        vehicleMaster.getTransporter().add(this);
+    }
 
 }

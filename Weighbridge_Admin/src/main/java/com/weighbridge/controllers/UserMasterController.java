@@ -44,10 +44,8 @@ public class UserMasterController {
 
         Pageable pageable;
 
-        System.out.println("hjsadljfhj"+sortField+" ordre"+sortOrder);
         if (sortField != null && !sortField.isEmpty()) {
             Sort.Direction direction = sortOrder.equalsIgnoreCase("desc") ? Sort.Direction.DESC : Sort.Direction.ASC;
-            System.out.println("direction "+direction);
             Sort sort = Sort.by(direction, sortField);
             pageable = PageRequest.of(page, size, sort);
         } else {
