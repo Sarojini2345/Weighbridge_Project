@@ -15,7 +15,7 @@ import java.util.List;
 @RequestMapping("/api/v1/company")
 public class CompanyMasterController {
 
-    private final CompanyMasterService companyMasterService;
+   private final CompanyMasterService companyMasterService;
 
     @PostMapping
     public ResponseEntity<CompanyMasterDto> createCompany(@Validated @RequestBody CompanyMasterDto companyMasterDto){
