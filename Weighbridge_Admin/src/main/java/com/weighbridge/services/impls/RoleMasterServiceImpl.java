@@ -31,25 +31,41 @@ public class RoleMasterServiceImpl implements RoleMasterService {
     HttpServletRequest request;
     @Override
     public RoleMasterDto createRole(RoleMasterDto roleDto) {
-        RoleMaster byRoleName = roleMasterRepository.findByRoleName(roleDto.getRoleName());
-        if(byRoleName!=null){
-            throw new ResponseStatusException(HttpStatus.CONFLICT,"Role already exist");
-
-        }
-        HttpSession session=request.getSession();
-        roleDto.setRoleCreatedBy(String.valueOf(session.getAttribute("userId")));
-        roleDto.setRoleCreatedDate(LocalDateTime.now());
-        RoleMaster role = modelMapper.map(roleDto, RoleMaster.class);
-
-        RoleMaster savedRole = null;
         try {
-            savedRole = roleMasterRepository.save(role);
-        } catch (Exception e) {
-            throw new ResourceCreationException("Failed to create role",e);
-        }
+            // Check if a role with the given name already exists
+            RoleMaster byRoleName = roleMasterRepository.findByRoleName(roleDto.getRoleName());
+            if (byRoleName != null) {
+                throw new ResponseStatusException(HttpStatus.CONFLICT, "Role already exists");
+            }
 
-        return modelMapper.map(savedRole, RoleMasterDto.class);
+            // Get the current user's session and set creation details
+            HttpSession session = request.getSession();
+            String loggedInUserId;
+            if (session != null && session.getAttribute("userId") != null) {
+                loggedInUserId = session.getAttribute("userId").toString();
+            }
+            else {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Session Expired, Login again !");
+            }
+
+            roleDto.setRoleCreatedBy(loggedInUserId);
+            roleDto.setRoleCreatedDate(LocalDateTime.now());
+
+            // Map DTO to entity and save the role
+            RoleMaster role = modelMapper.map(roleDto, RoleMaster.class);
+            RoleMaster savedRole = roleMasterRepository.save(role);
+
+            // Return the saved role DTO
+            return modelMapper.map(savedRole, RoleMasterDto.class);
+        } catch (ResponseStatusException e) {
+            // If the role already exists, rethrow the exception
+            throw e;
+        } catch (Exception e) {
+            // If any other unexpected error occurs, handle it and provide a generic error message
+            throw new ResourceCreationException("Failed to create role", e);
+        }
     }
+
 
 
 

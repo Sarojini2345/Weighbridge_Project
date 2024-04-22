@@ -71,9 +71,14 @@ public class UserAuthenticationServiceImpl implements UserAuthenticationService 
 
         // Set session attributes
         HttpSession session = request.getSession();
-        session.setAttribute("userId", dto.getUserId());
-        session.setAttribute("userSite", userMaster.getSite().getSiteId());
-        session.setAttribute("userCompany", userMaster.getCompany().getCompanyId());
+        try {
+            session.setAttribute("userId", dto.getUserId());
+            session.setAttribute("userSite", userMaster.getSite().getSiteId());
+            session.setAttribute("userCompany", userMaster.getCompany().getCompanyId());
+        }
+        catch (Exception e){
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,"Session Expired, Login again");
+        }
 
         // Prepare login response
         LoginResponse loginResponse = new LoginResponse();
