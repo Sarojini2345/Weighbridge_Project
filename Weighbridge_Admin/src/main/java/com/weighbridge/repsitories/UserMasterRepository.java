@@ -17,7 +17,7 @@ public interface UserMasterRepository extends JpaRepository<UserMaster, String> 
 
     Page<UserMaster> findAll(Pageable pageable);
 
-    boolean existsByUserEmailIdOrUserContactNo(String emailId, String contactNo);
+    boolean existsByUserEmailIdAndUserContactNo(String emailId, String contactNo);
 
     boolean existsByUserEmailIdAndUserIdNotOrUserContactNoAndUserIdNot(String emailId, String userId, String contactNo, String userId1);
 

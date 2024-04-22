@@ -90,38 +90,45 @@ private List<TransporterMaster> getAllTransportMaster(String vehicleNo){
 
     @Override
     public VehicleMaster addVehicle(VehicleMasterDto vehicleMasterDto, String transporterName) {
-        TransporterMaster transporterMaster = transporterMasterRepository.findByTransporterName(transporterName);
-
-        VehicleMaster vehicleMaster = transporterMasterRepository.findById(transporterMaster.getId()).map(transporter -> {
-            VehicleMaster vm = vehicleMasterRepository.findByVehicleNo(vehicleMasterDto.getVehicleNo());
-            long vehicleId = 0;
-            if(vm != null){
-                vehicleId = vm.getId();
-            }
-            // vehicle is existed
-            if (vehicleId != 0L) {
-                VehicleMaster vehicle = vehicleMasterRepository.findById(vehicleId).orElseThrow(() -> new ResourceNotFoundException("Vehicle", "VehicleNo", vehicleMasterDto.getVehicleNo()));
-                transporter.addVehicle(vehicle);
-                transporterMasterRepository.save(transporter);
-                return vehicle;
+        try {
+            TransporterMaster transporterMaster = transporterMasterRepository.findByTransporterName(transporterName);
+            if (transporterMaster == null) {
+                throw new ResourceNotFoundException("Transporter", "transporterName", transporterName);
             }
 
-            // add and create a new vehicle
-            VehicleMaster vehicleMaster1 = new VehicleMaster();
-            vehicleMaster1.setVehicleNo(vehicleMasterDto.getVehicleNo());
-            vehicleMaster1.setVehicleType(vehicleMasterDto.getVehicleType());
-            vehicleMaster1.setVehicleManufacturer(vehicleMasterDto.getVehicleManufacturer());
-            vehicleMaster1.setVehicleLoadCapacity(vehicleMasterDto.getVehicleLoadCapacity());
-            vehicleMaster1.setVehicleTareWeight(vehicleMasterDto.getVehicleTareWeight());
-            vehicleMaster1.setVehicleWheelsNo(vehicleMasterDto.getVehicleWheelsNo());
+            HttpSession session = request.getSession();
+            String userId = session.getAttribute("userId").toString();
 
-            // todo: createdby, date
+            VehicleMaster existingVehicle = vehicleMasterRepository.findByVehicleNo(vehicleMasterDto.getVehicleNo());
+            if (existingVehicle != null) {
+                transporterMaster.addVehicle(existingVehicle);
+                transporterMasterRepository.save(transporterMaster);
+                return existingVehicle;
+            }
 
-            transporter.addVehicle(vehicleMaster1);
-            return vehicleMasterRepository.save(vehicleMaster1);
-        }).orElseThrow(()-> new ResourceNotFoundException("Transporter", "transporterName", transporterName));
-        return vehicleMaster;
+            VehicleMaster newVehicle = new VehicleMaster();
+            newVehicle.setVehicleNo(vehicleMasterDto.getVehicleNo());
+            newVehicle.setVehicleType(vehicleMasterDto.getVehicleType());
+            newVehicle.setVehicleManufacturer(vehicleMasterDto.getVehicleManufacturer());
+            newVehicle.setVehicleLoadCapacity(vehicleMasterDto.getVehicleLoadCapacity());
+            newVehicle.setVehicleTareWeight(vehicleMasterDto.getVehicleTareWeight());
+            newVehicle.setVehicleWheelsNo(vehicleMasterDto.getVehicleWheelsNo());
+            newVehicle.setVehicleCreatedBy(userId);
+            newVehicle.setVehicleModifiedBy(userId);
+            newVehicle.setVehicleCreatedDate(LocalDateTime.now());
+            newVehicle.setVehicleModifiedDate(LocalDateTime.now());
+
+            transporterMaster.addVehicle(newVehicle);
+            transporterMasterRepository.save(transporterMaster);
+
+            return vehicleMasterRepository.save(newVehicle);
+        } catch (ResourceNotFoundException e) {
+            throw e; // Rethrow ResourceNotFoundException directly
+        } catch (Exception e) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Session Expired or Invalid User", e);
+        }
     }
+
 
     @Override
     public Page<VehicleResponse> vehicles(Pageable pageable) {
