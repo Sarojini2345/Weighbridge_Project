@@ -25,10 +25,15 @@ public class UserAuthentication {
     @NotBlank(message = "UserId is required")
     @Size(min=5, max = 15, message = "UserId id must be between 5 and 15 characters")
     private String userId;
-    @NotBlank(message = "Password is required!!")
+
+
     @Size(min = 8, message = "Password must be at least 8 characters long")
     @Column(name = "password")
     private String userPassword;
+
+    @Size(min = 8, message = "Password must be at least 8 characters long")
+    @Column(name = "defaultpassword")
+    private String defaultPassword;
 
     @ManyToMany(fetch = FetchType.EAGER, cascade = CascadeType.ALL)
     @JoinTable(

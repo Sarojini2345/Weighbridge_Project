@@ -13,6 +13,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.mindrot.jbcrypt.BCrypt;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -23,6 +24,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
+import org.apache.commons.lang3.RandomStringUtils;
 
 import java.time.LocalDateTime;
 import java.util.*;
@@ -43,9 +45,6 @@ public class UserMasterServiceImpl implements UserMasterService {
     private final SequenceGeneratorRepository sequenceGeneratorRepository;
     private final UserHistoryRepository userHistoryRepository;
 
-    @Value("${app.default-password}")
-    private String defaultPassword;
-
     @Autowired
     HttpServletRequest request;
 
@@ -57,6 +56,9 @@ public class UserMasterServiceImpl implements UserMasterService {
     // TODO put validation for company and site, if site does not belong to company than it shouldn't create
     @Override
     public String createUser(UserRequest userRequest, HttpSession session) {
+        String defaultPassword = generateRandomPassword();
+
+
         // Check if email or contact number already exists
         if (userMasterRepository.existsByUserEmailIdOrUserContactNo(userRequest.getEmailId(), userRequest.getContactNo())) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Email Id or Contact No is already taken");
@@ -81,7 +83,6 @@ public class UserMasterServiceImpl implements UserMasterService {
         if (siteMaster == null) {
             throw new ResourceNotFoundException("SiteMaster", "siteName", siteName);
         }
-
 
         // Create UserMaster instance and set properties
         UserMaster userMaster = new UserMaster();
@@ -120,7 +121,8 @@ public class UserMasterServiceImpl implements UserMasterService {
             });
         }
         userAuthentication.setRoles(roles);
-        userAuthentication.setUserPassword(defaultPassword);
+        String hashedPassword = BCrypt.hashpw(defaultPassword, BCrypt.gensalt());
+        userAuthentication.setDefaultPassword(hashedPassword);
 
 
         // Convert Set<String> to comma-separated String
@@ -134,12 +136,17 @@ public class UserMasterServiceImpl implements UserMasterService {
             UserMaster updatedUser = userMasterRepository.save(userMaster);
             UserAuthentication updatedAuthUser = userAuthenticationRepository.save(userAuthentication);
 
-            emailService.sendCredentials(userRequest.getEmailId(), userId, savedUser.getUserPassword());
+            emailService.sendCredentials(userRequest.getEmailId(), userId, defaultPassword);
             return "User is created successfully with userId : " + userId;
         } catch (DataAccessException e) {
             // Catch any database access exceptions and throw an InternalServerError exception
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Database access error occurred", e);
         }
+    }
+
+    private String generateRandomPassword() {
+        // Generate a random password of length 10
+        return RandomStringUtils.randomAlphanumeric(8);
     }
 
 
