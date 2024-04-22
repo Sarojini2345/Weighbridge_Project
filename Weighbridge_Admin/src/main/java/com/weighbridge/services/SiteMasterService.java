@@ -7,11 +7,10 @@ import java.util.List;
 import java.util.Map;
 
 public interface SiteMasterService {
-    SiteMasterDto createSite(SiteMasterDto siteMasterDto);
 
     List<SiteMasterDto> getAllSite();
 
-    String assignSite(SiteRequest siteRequest);
+    String createSite(SiteRequest siteRequest);
 
     List<Map<String, String>> findAllByCompanySites(String companyName);
 }
