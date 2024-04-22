@@ -54,11 +54,10 @@ public class UserMasterServiceImpl implements UserMasterService {
     EmailService emailService;
 
 
-    // TODO put validation for company and site, if site does not belong to company than it shouldn't create
     @Override
     public String createUser(UserRequest userRequest, HttpSession session) {
         // Check if email or contact number already exists
-        if (userMasterRepository.existsByUserEmailIdOrUserContactNo(userRequest.getEmailId(), userRequest.getContactNo())) {
+        if (userMasterRepository.existsByUserEmailIdAndUserContactNo(userRequest.getEmailId(), userRequest.getContactNo())) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Email Id or Contact No is already taken");
         }
 

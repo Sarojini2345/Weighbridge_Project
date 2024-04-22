@@ -19,15 +19,14 @@ public class SiteMasterController {
 
     private final SiteMasterService siteMasterService;
 
-//    @PostMapping
-//    public ResponseEntity<SiteMasterDto> createSite(@Validated @RequestBody SiteMasterDto siteMasterDto){
-//        SiteMasterDto savedSite = siteMasterService.createSite(siteMasterDto);
-//        return new ResponseEntity<>(savedSite, HttpStatus.CREATED);
-//    }
-
-    @PostMapping("/assignCompany")
-    public ResponseEntity<String> assignSite(@Validated @RequestBody SiteRequest siteRequest){
-        String response = siteMasterService.assignSite(siteRequest);
+    /**
+     * Endpoint for saving site and assign to a company
+     * @param siteRequest The payload containing site information to be saved.
+     * @return String containing the message site saved successfully with HTTP status OK.
+     */
+    @PostMapping()
+    public ResponseEntity<String> createSite(@Validated @RequestBody SiteRequest siteRequest){
+        String response = siteMasterService.createSite(siteRequest);
         return ResponseEntity.ok(response);
     }
     @GetMapping

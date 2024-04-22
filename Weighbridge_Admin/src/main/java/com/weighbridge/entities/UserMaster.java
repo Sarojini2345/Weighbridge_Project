@@ -42,7 +42,7 @@ public class UserMaster {
 
     @NotBlank(message = "Contact number is required")
     @Pattern(regexp = "^\\+?[1-9][0-9]{7,14}$", message = "Invalid contact number format")
-    @Column(name = "user_contact_no", unique = true)
+    @Column(name = "user_contact_no")
     private String userContactNo;
 
     @NotBlank(message = "Firstname is required")

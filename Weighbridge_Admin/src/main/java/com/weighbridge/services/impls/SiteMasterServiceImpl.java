@@ -31,27 +31,6 @@ public class SiteMasterServiceImpl implements SiteMasterService {
     @Autowired
     private HttpServletRequest httpServletRequest;
 
-    @Override
-    public SiteMasterDto createSite(SiteMasterDto siteMasterDto) {
-        SiteMaster bySiteNameAndSiteAddress = siteMasterRepository.findBySiteNameAndSiteAddress(siteMasterDto.getSiteName(), siteMasterDto.getSiteAddress());
-        if (bySiteNameAndSiteAddress != null) {
-            throw new ResponseStatusException(HttpStatus.CONFLICT, "give proper address of the site");
-        }
-        siteMasterDto.setSiteId(generateSiteId(siteMasterDto.getSiteName()));
-
-        SiteMaster site = modelMapper.map(siteMasterDto, SiteMaster.class);
-        HttpSession session = httpServletRequest.getSession();
-        String userId = String.valueOf(session.getAttribute("userId"));
-        LocalDateTime currentDateTime = LocalDateTime.now();
-        site.setSiteCreatedBy(userId);
-        site.setSiteCreatedDate(currentDateTime);
-        site.setSiteModifiedBy(userId);
-        site.setSiteModifiedDate(currentDateTime);
-        SiteMaster savedSite = siteMasterRepository.save(site);
-
-        return modelMapper.map(savedSite, SiteMasterDto.class);
-    }
-
     private String generateSiteId(String siteName) {
         // Extract the first three letters of the site name (or abbreviation)
         String siteAbbreviation = siteName.substring(0, Math.min(siteName.length(), 3)).toUpperCase();
@@ -81,7 +60,7 @@ public class SiteMasterServiceImpl implements SiteMasterService {
     }
 
     @Override
-    public String assignSite(SiteRequest siteRequest) {
+    public String createSite(SiteRequest siteRequest) {
         // Find the company by name
         CompanyMaster company = companyMasterRepository.findByCompanyName(siteRequest.getCompanyName());
         if (company == null) {
