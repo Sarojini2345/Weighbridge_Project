@@ -1,4 +1,4 @@
-package com.weighbridge.dtos;
+package com.weighbridge.payloads;
 
 import com.weighbridge.entities.TransporterMaster;
 import lombok.Data;
@@ -11,7 +11,7 @@ import java.util.List;
 
 @Getter
 @Setter
-public class VehicleMasterDto {
+public class VehicleRequest {
     private String vehicleNo;
     private String vehicleType;
     private String vehicleManufacturer;
@@ -19,9 +19,4 @@ public class VehicleMasterDto {
     private Double vehicleTareWeight;
     private Double vehicleLoadCapacity;
     private Date vehicleFitnessUpTo;
-    private String vehicleCreatedBy;
-    private LocalDateTime vehicleCreatedDate;
-    private String vehicleModifiedBy;
-    private LocalDateTime vehicleModifiedDate;
-
 }
