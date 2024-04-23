@@ -22,36 +22,40 @@ public class TransporterServiceImpl implements TransporterService {
     private TransporterMasterRepository transporterMasterRepository;
     @Autowired
     private  ModelMapper modelMapper;
-
     @Autowired
     private HttpServletRequest request;
 
     @Override
     public String addTransporter(TransporterRequest transporterRequest) {
-        HttpSession session=request.getSession();
-        Boolean BytransporterMaster = transporterMasterRepository.existsByTransporterName(transporterRequest.getTransporterName());
-        if (BytransporterMaster){
+        Boolean ByTransporterMaster = transporterMasterRepository.existsByTransporterName(transporterRequest.getTransporterName());
+        if (ByTransporterMaster){
             throw new ResponseStatusException(HttpStatus.CONFLICT,"Transporter already exist");
         }
         else {
-            try {
-                Object userId = session.getAttribute("userId");
-                TransporterMaster transporterMaster = new TransporterMaster();
-                transporterMaster.setTransporterAddress(transporterRequest.getTransporterAddress());
-                transporterMaster.setTransporterContactNo(transporterRequest.getTransporterContactNo());
-                transporterMaster.setTransporterEmailId(transporterRequest.getTransporterEmailId());
-                transporterMaster.setTransporterName(transporterRequest.getTransporterName());
-                transporterMaster.setTransporterCreatedBy(String.valueOf(userId));
-                transporterMaster.setTransporterModifiedBy(String.valueOf(userId));
-                LocalDateTime currentDateTime = LocalDateTime.now();
-                transporterMaster.setTransporterCreatedDate(currentDateTime);
-                transporterMaster.setTransporterModifiedDate(currentDateTime);
-                transporterMasterRepository.save(transporterMaster);
+            HttpSession session = request.getSession();
+            String userId;
+            if (session != null && session.getAttribute("userId") != null) {
+                userId = session.getAttribute("userId").toString();
+            } else {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Session Expired, Login again !");
             }
-            catch (Exception e){
-                throw new ResponseStatusException(HttpStatus.BAD_REQUEST,"Session Expired, Login again");
-            }
-            return "transporter added successfully";
+            TransporterMaster transporterMaster=new TransporterMaster();
+            transporterMaster.setTransporterName(transporterRequest.getTransporterName());
+            transporterMaster.setTransporterAddress(transporterRequest.getTransporterAddress());
+            transporterMaster.setTransporterContactNo(transporterRequest.getTransporterContactNo());
+            transporterMaster.setTransporterEmailId(transporterRequest.getTransporterEmailId());
+
+            LocalDateTime currentDateTime = LocalDateTime.now();
+
+            transporterMaster.setTransporterCreatedBy(String.valueOf(userId));
+            transporterMaster.setTransporterCreatedDate(currentDateTime);
+            transporterMaster.setTransporterModifiedBy(String.valueOf(userId));
+            transporterMaster.setTransporterModifiedDate(currentDateTime);
+
+
+            transporterMasterRepository.save(transporterMaster);
+            return "Transporter added successfully";
+
         }
 
     }
