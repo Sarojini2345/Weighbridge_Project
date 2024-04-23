@@ -41,3 +41,4 @@ public class MaterialMaster {
     @Column(name = "material_modified_date")
     private LocalDateTime materialModifiedDate; // Date when the material was last modified
 }
+

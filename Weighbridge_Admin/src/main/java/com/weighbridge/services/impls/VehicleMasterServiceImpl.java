@@ -133,7 +133,8 @@ public class VehicleMasterServiceImpl implements VehicleMasterService {
             return vehicleMasterRepository.save(newVehicle);
         }).orElseThrow(() -> new ResourceNotFoundException("Transporter", "transporterName", transporterName));
         return "Vehicle added successfully";
-    }
+  }
+
 
     @Override
     public Page<VehicleResponse> vehicles(Pageable pageable) {

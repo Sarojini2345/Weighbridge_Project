@@ -30,22 +30,42 @@ public class CompanyMasterServiceImpl implements CompanyMasterService {
 
     @Override
     public CompanyMasterDto createCompany(CompanyMasterDto companyMasterDto) {
-        CompanyMaster byCompanyName = companyMasterRepository.findByCompanyName(companyMasterDto.getCompanyName());
-        if (byCompanyName != null) {
-            throw new ResponseStatusException(HttpStatus.CONFLICT, "Company name already exist");
+        try {
+            // Check if the company name already exists
+            CompanyMaster existingCompany = companyMasterRepository.findByCompanyName(companyMasterDto.getCompanyName());
+            if (existingCompany != null) {
+                throw new ResponseStatusException(HttpStatus.CONFLICT, "Company name already exists");
+            }
+
+            // Set user session details
+
+            HttpSession session = request.getSession();
+            String userId;
+            if (session != null && session.getAttribute("userId") != null) {
+                userId = session.getAttribute("userId").toString();
+            }
+            else {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Session Expired, Login again !");
+            }
+            companyMasterDto.setCompanyCreatedBy(userId);
+            companyMasterDto.setCompanyModifiedBy(userId);
+            companyMasterDto.setCompanyCreatedDate(LocalDateTime.now());
+            companyMasterDto.setCompanyModifiedDate(LocalDateTime.now());
+
+            // Map DTO to entity and save
+            CompanyMaster company = modelMapper.map(companyMasterDto, CompanyMaster.class);
+            CompanyMaster savedCompany = companyMasterRepository.save(company);
+
+            return modelMapper.map(savedCompany, CompanyMasterDto.class);
+        } catch (ResponseStatusException e) {
+            // If the company name already exists, rethrow the exception
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,"Session Expired, Login again");
+        } catch (Exception e) {
+            // If any other unexpected error occurs, handle it and provide a generic error message
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "An unexpected error occurred", e);
         }
-        companyMasterDto.setCompanyId(generateCompanyId(companyMasterDto.getCompanyName()));
-        HttpSession session = request.getSession();
-        companyMasterDto.setCompanyCreatedBy(String.valueOf(session.getAttribute("userId")));
-        companyMasterDto.setCompanyModifiedBy(String.valueOf(session.getAttribute("userId")));
-        companyMasterDto.setCompanyCreatedDate(LocalDateTime.now());
-        companyMasterDto.setCompanyModifiedDate(LocalDateTime.now());
-        CompanyMaster company = modelMapper.map(companyMasterDto, CompanyMaster.class);
-
-        CompanyMaster savedCompany = companyMasterRepository.save(company);
-
-        return modelMapper.map(savedCompany, CompanyMasterDto.class);
     }
+
 
     private String generateCompanyId(String companyName) {
         String companyAbbreviation = "";

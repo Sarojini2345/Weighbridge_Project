@@ -11,6 +11,7 @@ import com.weighbridge.repsitories.UserMasterRepository;
 import com.weighbridge.services.UserAuthenticationService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
+import org.mindrot.jbcrypt.BCrypt;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -49,31 +50,32 @@ public class UserAuthenticationServiceImpl implements UserAuthenticationService 
         UserMaster userMaster = userMasterRepository.findByUserIdWithCompanyAndSite(dto.getUserId())
                 .orElseThrow(() -> new ResourceNotFoundException("User", "userId", dto.getUserId()));
 
-        if (userMaster.getUserStatus().equals("INACTIVE")) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "User is inactive");
-        }
+            if (userMaster.getUserStatus().equals("INACTIVE")) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "User is inactive");
+            }
 
-        if (!userAuthentication.getUserPassword().equals(dto.getUserPassword())) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid userId or password");
-        }
-
-        if (dto.getUserPassword().equals(defaultPassword)) {
+        if (userAuthentication.getUserPassword()==null&&userAuthentication.getDefaultPassword()!=null) {
             LoginResponse loginResponse = new LoginResponse();
             loginResponse.setMessage("Please reset your password.");
             loginResponse.setUserId(dto.getUserId());
             return loginResponse;
         }
 
-//        String password = userAuthenticationRepository.findPasswordByUserId(dto.getUserId());
-//        if (!password.equals(dto.getUserPassword())) {
-//            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid userId or password");
-//        }
+        if (!BCrypt.checkpw(dto.getUserPassword(),userAuthentication.getUserPassword())) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid userId or password");
+        }
+
 
         // Set session attributes
         HttpSession session = request.getSession();
-        session.setAttribute("userId", dto.getUserId());
-        session.setAttribute("userSite", userMaster.getSite().getSiteId());
-        session.setAttribute("userCompany", userMaster.getCompany().getCompanyId());
+        try {
+            session.setAttribute("userId", dto.getUserId());
+            session.setAttribute("userSite", userMaster.getSite().getSiteId());
+            session.setAttribute("userCompany", userMaster.getCompany().getCompanyId());
+        }
+        catch (Exception e){
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,"Session Expired, Login again");
+        }
 
         // Prepare login response
         LoginResponse loginResponse = new LoginResponse();
@@ -103,7 +105,8 @@ public class UserAuthenticationServiceImpl implements UserAuthenticationService 
     public UserAuthentication resetPassword(String userId, ResetPasswordDto resetPasswordDto) {
         UserAuthentication userAuthentication = userAuthenticationRepository.findByUserId(userId);
         System.out.println("password: "+resetPasswordDto.getPassword());
-        userAuthentication.setUserPassword(resetPasswordDto.getPassword());
+        String hashedPassword = BCrypt.hashpw(resetPasswordDto.getPassword(), BCrypt.gensalt());
+        userAuthentication.setUserPassword(hashedPassword);
         UserAuthentication saveUser = userAuthenticationRepository.save(userAuthentication);
         return saveUser;
     }

@@ -55,6 +55,7 @@ public class TransporterServiceImpl implements TransporterService {
 
             transporterMasterRepository.save(transporterMaster);
             return "Transporter added successfully";
+
         }
 
     }
